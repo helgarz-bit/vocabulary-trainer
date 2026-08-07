@@ -2,6 +2,9 @@ from config import  *
 from utils import input_dialog, answer_dialog, clear_screen, what_to_do
 from storage import vocabulary, stats
 
+DIFFICULT_THRESHOLD = 0.6
+MIN_SHOWS_FOR_STATS = 5
+
 #общая статистика
 def total_stats() -> None:
     total_words =     len(vocabulary)
@@ -25,13 +28,18 @@ def total_stats() -> None:
     print(f"Выучено на 80%: {strek_4}")
 
 #вывод списка самых трудных слов
-def stats_dificult_words():
-    dificault_list = [(word, values[CORRECT]/values[SHOWS]) for word, values in stats.items() if values[SHOWS] > 0]
-    if dificault_list:
-        dificault_list.sort()
-        print(dificault_list)
+def stats_difficult_words():
+    print('Список "трудных" слов')
+    show_words_list = [(word, values[CORRECT], values[SHOWS]) for word, values in stats.items() if values[SHOWS] > 0]
+    difficult_list = [item for item in show_words_list if item[1]/item[2] < DIFFICULT_THRESHOLD and item[2] >= MIN_SHOWS_FOR_STATS]
+        
+    if difficult_list:
+        difficult_list.sort(key=lambda item: item[1]/item[2])
+        for word, correct, shows in difficult_list:
+                print(f"{word} - {correct/shows * 100:.2f}% {correct} из {shows} верных ответов")
     else:
         print("Трудных слов не найдено.")
+
         #вывод статистики по отдельному слову
 def show_stats_word(word: str) -> None:
     print(f"Статистика изучения слова {word}")
@@ -76,7 +84,7 @@ def manager_stats(action: str)    :
                 stats_word()
                 repeat = True
             case "dificault":
-                stats_dificult_words()
+                stats_difficult_words()
             case "rewrite":
                 set_default()
             case "return":
