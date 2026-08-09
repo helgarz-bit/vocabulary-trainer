@@ -37,3 +37,5 @@ STATUS = "status"
 LEARNED = "learned"
 NOT_LEARNED = "not learned"
 STREAK_THREE = "streak_three"
+
+DEFAULT_CATEGORY= "uncategorized"

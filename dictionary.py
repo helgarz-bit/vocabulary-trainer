@@ -1,23 +1,32 @@
-from storage import vocabulary, stats
+from storage import vocabulary, stats, categories
 from utils import answer_dialog, input_dialog, pause, clear_screen, what_to_do
 from config import *
 from statistic import show_stats_word
 
-categories = ["default category"]
-DEFAULT_CATEGORY= "default category"
-
-#выбор и назначение категории
-def choose_category() -> int|None:
-    print("Выберите категорию из списка. Для отмены введите q.")
+#вывод списка категорий
+def show_category(prompt: str|None =None) -> None:
+    if not prompt:
+        prompt = "Выберите категорию из списка."
+    print(f"{prompt} a - добавить новую категорию,  q - отмена")
     for index in range(len(categories)):
         print(f"{index+1} - {categories[index]}")
 
+
+#выбор и назначение категории
+def choose_category(old_category: str|None =None) -> int|None:    
     while True:
         choice = input("Введите номер категории: ").strip()
-        if choice == 'q':
-            return None
+        if choice == 'q': #выбор отменен
+            return None 
+        elif choice == 'a':
+            add_category()
+            show_category()
+            continue
         elif not choice: #пустая строка        
-            return 0 #возвращаем категорию по умолчанию
+            if old_category is not None: #страя категория при редактировании слова
+                return categories.index(old_category)
+            else:
+                return 0 #возвращаем категорию по умолчанию
         #строка не пустая
         if not choice.isnumeric(): #введенное значение не число
             print("Введенное значение не является числом. Попробуйте еще раз!")
@@ -33,11 +42,19 @@ def choose_category() -> int|None:
         return choice    -1
 
 #установка категории для слова
-def set_category(index: int|None) -> str:
-    if index is None:
+def set_category(old_category: str|None =None) -> str:
+    if  old_category is not None:
+        prompt = 'Выберите категорию или нажмите "Enter", чтобы оставить категорию без изменения.'
+    else:
+        prompt = None
+#выбираем из списка категорий
+    show_category(prompt)
+    index_cat = choose_category(old_category)
+    print(index_cat)
+    if index_cat is None:
         category = DEFAULT_CATEGORY
     else:
-        category= categories[index]
+        category= categories[index_cat]
 
     return category
 
@@ -54,6 +71,12 @@ def input_category(old_category: str|None =None) -> str|None:
         return None
 
     return category
+
+#переназначение категории в словаре слов
+def appointment_category(old_category: str, new_category: str) -> None:
+    for word, values in vocabulary.items():
+        if values[CATEGORY] == old_category:
+            values[CATEGORY] = new_category
 
 #добавление новой категории
 def add_category() -> None:
@@ -95,6 +118,9 @@ def edit_category() -> None:
 def delete_category() -> None:
     print("Удаление категории.")
     index_cat = choose_category()
+    if index_cat is None:
+        print("Удаление категории отменено.")
+        return
     if index_cat == 0:
         print('Удаление категории "по умолчанию" невозможно.')
         return
@@ -183,9 +209,11 @@ def add_word() -> None:
 
     vocabulary[word] = values
     #назначение категории
+    
     vocabulary[word][CATEGORY] = set_category()
+    print(vocabulary[word][CATEGORY])
 
-    stats(word)
+    set_stats(word)
     print(f"Слово  {word} успешно добавлено в словарь.")
 
 
@@ -207,10 +235,14 @@ def edit_word() -> None:
     if values is None:
         print("Редактирование слова отменено.")
         return
-#сохраним старрый перевод
+#сохраним старрый перевод и категорию
     old_translation = vocabulary[word][TRANSLATION]
+    old_category = vocabulary[word][CATEGORY]
     #записываем новые значения в словарь
     vocabulary[new_word] = values
+    #переназначение категории
+    category = set_category(old_category=old_category)
+    vocabulary[new_word][CATEGORY] = category
 #если изменили слово
     if word != new_word:
         #старую запись и статистику удаляем 
@@ -220,6 +252,7 @@ def edit_word() -> None:
     if word != new_word or old_translation != values[TRANSLATION]:
         #обнуляем статистику для слова
                 set_stats(new_word)
+
     print("Редактирование слова завершено.")            
 
     
@@ -264,6 +297,9 @@ def show_all_words() -> None:
     for word, values in vocabulary.items():
         print(word, values[TRANSLATION], values[EXAMPLE], sep="--->")
 
+#поиск по категории
+#def search_by_category():
+
 #начальная функция
 def manager_dict(action: str) -> None:
     clear_screen()
@@ -287,11 +323,17 @@ def manager_dict(action: str) -> None:
             action = do
 
         #проверка работы модуля
-add_category()
-edit_category()
-delete_category()
-cat = choose_category()
-if cat is not None:
-    print(categories[cat])
-else:
-    print(cat)
+#if __name__ == "__main__":
+    #add_category()
+    #edit_category()
+    #add_word()
+#find_word()
+#edit_word()
+#find_word()
+    #edit_word()
+    #delete_category()
+    #cat = choose_category()
+    #if cat is not None:
+        #print(categories[cat])
+    #else:
+        #print(cat)
