@@ -2,3 +2,4 @@ __pycash__/
 *.pyc
 dictionary.json
 statistics.json
+categories.json
