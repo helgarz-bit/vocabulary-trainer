@@ -5,9 +5,10 @@ from statistic import show_stats_word
 
 #вывод списка категорий
 def show_category(prompt: str|None =None) -> None:
+    clear_screen()
     if not prompt:
         prompt = "Выберите категорию из списка."
-    print(f"{prompt} a - добавить новую категорию,  q - отмена")
+    print(f"{prompt} \na - добавить новую категорию \n q - отмена")
     for index in range(len(categories)):
         print(f"{index+1} - {categories[index]}")
 
@@ -17,7 +18,10 @@ def choose_category(old_category: str|None =None) -> int|None:
     while True:
         choice = input("Введите номер категории: ").strip()
         if choice == 'q': #выбор отменен
-            return None 
+            if old_category is None:
+                return None 
+            else:
+                return categories.index(old_category)
         elif choice == 'a':
             add_category()
             show_category()
@@ -50,7 +54,7 @@ def set_category(old_category: str|None =None) -> str:
 #выбираем из списка категорий
     show_category(prompt)
     index_cat = choose_category(old_category)
-    print(index_cat)
+    
     if index_cat is None:
         category = DEFAULT_CATEGORY
     else:
@@ -92,6 +96,7 @@ def add_category() -> None:
 #редактирование категории
 def edit_category() -> None:
     print("Редактирование категории.")
+    show_category()
     index_cat = choose_category()
     if index_cat is None:
         print("Редактирование категории отменено.")
@@ -114,9 +119,13 @@ def edit_category() -> None:
     else:
         print(f"Категория {old_category} не изменена.")
 
+#переназначение измененной категории в словаре слов
+    appointment_category(old_category, new_category)
+
 #удаление категории
 def delete_category() -> None:
     print("Удаление категории.")
+    show_category()
     index_cat = choose_category()
     if index_cat is None:
         print("Удаление категории отменено.")
@@ -131,6 +140,8 @@ def delete_category() -> None:
         print(f"Категория {category} удалена.")
     else:       
         print(f"Удаление категории {category} отменено.")
+
+    appointment_category(category, DEFAULT_CATEGORY)
 
 #функция инициализации статистики
 def set_stats(word: str) -> None:
@@ -211,8 +222,7 @@ def add_word() -> None:
     #назначение категории
     
     vocabulary[word][CATEGORY] = set_category()
-    print(vocabulary[word][CATEGORY])
-
+    
     set_stats(word)
     print(f"Слово  {word} успешно добавлено в словарь.")
 
@@ -294,6 +304,7 @@ def find_word() -> None:
 
 #функция вывода списка всех слов из словаря
 def show_all_words() -> None:
+    print("Общий список слов словаря")
     for word, values in vocabulary.items():
         print(word, values[TRANSLATION], values[EXAMPLE], sep="--->")
 
@@ -302,8 +313,9 @@ def show_all_words() -> None:
 
 #начальная функция
 def manager_dict(action: str) -> None:
-    clear_screen()
+    repeat = True
     while True:
+        clear_screen()
         match action:
             case "add":
                 add_word()
@@ -314,26 +326,22 @@ def manager_dict(action: str) -> None:
             case "find":
                 find_word()
             case "all":
+                repeat = False
                 show_all_words()
+            case "add_cat":
+                add_category()
+            case "edit_cat":
+                edit_category()
+            case "delete_cat":
+                delete_category()
             case "return":
                 break
     
-        do =what_to_do(repeat=True)
+        do =what_to_do(repeat)
         if do != 'r':
             action = do
 
         #проверка работы модуля
-#if __name__ == "__main__":
-    #add_category()
-    #edit_category()
-    #add_word()
-#find_word()
-#edit_word()
-#find_word()
-    #edit_word()
-    #delete_category()
-    #cat = choose_category()
-    #if cat is not None:
-        #print(categories[cat])
-    #else:
-        #print(cat)
+if __name__ == "__main__":
+    pass
+    

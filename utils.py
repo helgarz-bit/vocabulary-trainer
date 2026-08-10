@@ -3,11 +3,11 @@ import os
 #функция диалога с ответами "да"\"нет"
 def answer_dialog(prompt: str) -> bool:
     while True:
-        answer = input(f"{prompt} Введите y/n: ").strip().lower()
+        answer = input(f"{prompt} Введите y/n(д/н): ").strip().lower()
             
-        if answer == 'y':
+        if answer == 'y' or answer == 'д':
             return True
-        elif answer == 'n':
+        elif answer == 'n' or 'н':
             return False
         print("Введен недопустимый вариант. Попробуйте еще раз!")
 
