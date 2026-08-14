@@ -25,7 +25,7 @@ def what_to_do(repeat: bool) -> str:
         else:
             print("Введена недопустимая команда. Попробуйте еще раз!")
 
-#функция проверки ввода
+#функция проверки ввода слова
 def check_valid(value: str) -> bool:
 #проверка первого символа
     char = value[0]
@@ -46,7 +46,7 @@ def check_valid(value: str) -> bool:
             return False
     return True
     
-#функция обработки ввода
+#функция обработки ввода  слова
 def input_dialog(prompt: str,settings: dict, old_value: str|None = None) -> str|None:
     while True:
         in_value = input(f'{prompt} ').strip()
@@ -70,6 +70,27 @@ def input_dialog(prompt: str,settings: dict, old_value: str|None = None) -> str|
                 continue
             
         return in_value
+
+#проверка ввода числовых значений
+def input_number(prompt: str, min_value: int, max_value: int, old_value: int|None) -> int|None:
+    while True:
+        number = input(prompt).strip()
+        if number == 'q':
+            return None
+        elif not number: #строка пустая
+            if old_value is not None:
+                return old_value
+            print("Значение не может быть пустым. Попробуйте еще раз!")
+            continue
+        #строка не пустая
+        if not number.isnumeric():
+            print("Введенное значение не является числом. Попробуйте еще раз!")
+            continue
+        #если число, проверяем диапазон
+        if number < min_value or number > max_value:
+            print("Введенное значение вне допустимого диапазона. Попробуйте еще раз!")
+            continue
+    return int(number)
 
 #функция  очистки экрана
 def clear_screen() -> None:
