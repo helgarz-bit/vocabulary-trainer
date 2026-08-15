@@ -87,10 +87,12 @@ def input_number(prompt: str, min_value: int, max_value: int, old_value: int|Non
             print("Введенное значение не является числом. Попробуйте еще раз!")
             continue
         #если число, проверяем диапазон
+        number = int(number)
         if number < min_value or number > max_value:
             print("Введенное значение вне допустимого диапазона. Попробуйте еще раз!")
             continue
-    return int(number)
+
+        return number
 
 #функция  очистки экрана
 def clear_screen() -> None:

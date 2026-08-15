@@ -45,6 +45,7 @@ def show_stats_word(word: str) -> None:
     print(f"Статистика изучения слова {word}")
     for param_key, prompt in stats_fields.items():
             print(f"{prompt}:  {stats[word][param_key]}")
+
 def stats_word() -> None:
     print("Вывод статистики по выбранному слову. Для отмены введите 'q'")
     
@@ -63,11 +64,14 @@ def stats_word() -> None:
 def set_default() -> None:
     answer = answer_dialog("Вы действительно хотите обнулить статистику?")  
     if answer:
-        for  value in stats.values():
+        for  word, value in stats.items():
             value[SHOWS] = 0
             value[CORRECT] = 0
             value[STREAK] = 0
-            value[STATUS] = NOT_LEARNED
+            value[STATUS] = NEW
+            value[LAST_WRONG] = 0
+            value[NEXT_SHOW] = None
+            value[INTERVAL] = STATUSES[NEW][INTERVALS][0]
         print("Статистика успешно обнулена.")
     else:
         print("Обнуление статистики отменено.")

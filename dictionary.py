@@ -145,7 +145,14 @@ def delete_category() -> None:
 
 #функция инициализации статистики
 def set_stats(word: str) -> None:
-    stats[word] = {SHOWS: 0, CORRECT: 0, STREAK: 0, STATUS: NOT_LEARNED}
+    stats[word] = {
+        SHOWS: 0, 
+        CORRECT: 0, 
+        STREAK: 0, 
+        STATUS: NEW, 
+        NEXT_SHOW: None, 
+    INTERVAL: STATUSES[NEW][INTERVALS][0],
+        LAST_WRONG: 0}
 
 #формирование текста запроса
 def form_prompt(field_name: str, is_edit: bool) -> str:
