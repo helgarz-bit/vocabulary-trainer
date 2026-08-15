@@ -83,7 +83,7 @@ STATS_MENU = {
     "4": {
          "title": "Обнулить статистику",
          "object": manager_stats,
-         "argument": "default"},
+         "argument": "rewrite"},
     "0": {
          "title": "Назад"}
 }}
