@@ -1,9 +1,11 @@
 import random
 from datetime import date, timedelta
+from copy import deepcopy
 
 from config import                        *
 from storage import  vocabulary, stats
 from utils import  input_dialog, answer_dialog, input_number, clear_screen, pause
+from display import show_table
 
 DEFAULT_COUNT_WORDS = 5
 MAX_COUNTS_WORDS = 20
@@ -24,7 +26,7 @@ TRAINER_SETTINGS = {
     "to_lower": True
 }
 
-start_stats = []
+start_stats = {}
 
 #получение списка слов на сессию
 def get_learning_words(count_words: int) -> tuple:
@@ -232,15 +234,43 @@ def set_session_params() -> int:
             
 #установка максимального количества циклов
     return count_words
-#вывод статистики по сессии
-def show_session_stats(count_words: int, session_stats: dict) -> None:
-    print("Статистика прогресса за сессию")
-    print(f"Всего показано {count_words} слов {session_stats[SHOWS]} раз")
-    print(f"верных ответов: {session_stats[CORRECT]}")
-    print(f"Неверных ответов: {session_stats[SHOWS]-session_stats[CORRECT]}")
-    print(f"Слов с тремя верными ответами подряд: {session_stats[STREAK_THREE]}")
-    
 
+#сохранение копии словаря
+def save_start_stats(should_save: bool) -> None:
+    if should_save:
+        start_stats.clear()
+        start_stats.update(deepcopy(stats))
+    else:
+        stats.clear()
+        stats.update(start_stats)
+
+#вывод статистики по сессии
+def prepare_stats_for_display(count_words: int, session_stats: dict, session_list: list) -> None:
+    session_words_stats = []
+    
+    headers = [["English word/", "Перевод"], ["Всего", "показов"], ["Верных/", "неверных", "ответов"], ["Верных", "ответов", "подряд"], ["Интервал"], ["Срок", "показа"], ["Статус", "до сессии"], ["Статус", "после", "сессии"]]
+    total_shows = session_stats["shows"]
+    total_correct =session_stats["correct"]
+    total_incorrect = total_shows - total_correct
+    accuracy = round(total_correct/total_shows, 2)
+
+    total_session_stats = [("Всего показано слов:", str(count_words)), ("Всего ответов:", str(total_shows)), ("Всего правильных ответов:", str(total_correct)), ("Всего неправильных ответов:", str(total_incorrect)), ("Общая точность ответов:", str(accuracy) + "%")]
+    show_table(title="Общая статистика прогресса обучения за сессию", data=total_session_stats)
+
+    for word in session_list:
+        shows = stats[word][SHOWS] - start_stats[word][SHOWS]
+        correct = stats[word][CORRECT] - start_stats[word][CORRECT]
+        incorrect = shows - correct
+        streak = stats[word][STREAK]
+        interval = stats[word][INTERVAL]
+        next_show = stats[word][NEXT_SHOW]
+        old_status = start_stats[word][STATUS]
+        new_status = stats[word][STATUS]
+    
+        line = ([word, vocabulary[word][TRANSLATION]], str(shows), str(correct) + "/" + str(incorrect), str(streak), str(interval), next_show.strftime("%d.%m.%y"), old_status, new_status)
+        session_words_stats.append(line)
+
+    show_table("Прогресс по результатам сессии", session_words_stats, headers)
 #функция запуска режима тренировки
 def start_session() -> None:
     clear_screen()
@@ -248,7 +278,8 @@ def start_session() -> None:
     "shows": 0,
     "correct": 0,
 }
-
+    #сохраняем копию словаря до начала тренировки
+    save_start_stats(should_save=True)
     count_words = set_session_params()
     calculate_priority()
     session_list, count_words = get_learning_words(count_words)
@@ -264,6 +295,5 @@ def start_session() -> None:
             get_new_interval(word)
             set_new_status(word)
             set_next_show(word)
-    #if is_show_stats:
-        #show_session_stats(count_words, session_stats)
+        prepare_stats_for_display(count_words, session_stats, session_list)
     pause()

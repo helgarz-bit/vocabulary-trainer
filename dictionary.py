@@ -2,6 +2,7 @@ from storage import vocabulary, stats, categories
 from utils import answer_dialog, input_dialog, pause, clear_screen, what_to_do
 from config import *
 from statistic import show_stats_word
+from display  import show_table, prepare_data_to_print
 
 #вывод списка категорий
 def show_category(prompt: str|None =None) -> None:
@@ -290,13 +291,15 @@ def delete_word() -> None:
     
 #функция отображения записи словаря
 def show_word(word: str) -> None:
-    print(f"Карточка слова {word}")
-    for field_name,  params in FIELDS.items():
-        if field_name == WORD:
-            print(f'{params[PROMPT].capitalize()}: {word}')
-            continue
-        print(f"{params[PROMPT].capitalize()}: {vocabulary[word][field_name]}")
-    show_stats_word(word)
+    #print(f"Карточка слова {word}")
+    #for field_name,  params in FIELDS.items():
+        #if field_name == WORD:
+            #print(f'{params[PROMPT].capitalize()}: {word}')
+            #continue
+        #print(f"{params[PROMPT].capitalize()}: {vocabulary[word][field_name]}")
+    
+    show_table(title=f"Карточка слова {word}", data=(vocabulary, word))
+    show_table(title=f"статистика изучения слова {word}", data=(stats, word))
     
     
 #функция поиска слова 
@@ -310,10 +313,10 @@ def find_word() -> None:
     show_word(word)
 
 #функция вывода списка всех слов из словаря
-def show_all_words() -> None:
-    print("Общий список слов словаря")
-    for word, values in vocabulary.items():
-        print(word, values[TRANSLATION], values[EXAMPLE], sep="--->")
+def show_all_words() -> None:    
+    headers = [["Английское слово"], ["Перевод"], ["Категория"], ["Пример"]]
+    show_table(title="Список слов словаря", data=vocabulary, headers=headers)
+
 
 #поиск по категории
 #def search_by_category():
