@@ -1,5 +1,5 @@
 from storage import vocabulary, stats, categories
-from utils import answer_dialog, input_dialog, pause, clear_screen, what_to_do
+from utils import answer_dialog, input_dialog, pause, clear_screen, what_to_do, detect_language
 from config import *
 from statistic import show_stats_word
 from display  import show_table, prepare_data_to_print
@@ -164,28 +164,50 @@ def form_prompt(field_name: str, is_edit: bool) -> str:
 
     return prompt
     
-        
-#ввод слова
-def input_word(action: str, must_be: bool, old_word: str|None =None) -> str|None:
-    if not old_word:
-        print(f"{action.capitalize()} записи словаря. ")
-    
+#проверка существования записи в словаре
+def check_existence_word        (word: str, lang: str) -> str|None:
+    if lang == "lat":
+        if word in vocabulary:
+             return word
+        else:
+            return None
+
+    for  key, values in vocabulary.items():
+        if values[TRANSLATION] == word:
+            return key
+
+    return None
+
+#получение корректного ключа
+def get_word_key(must_be: bool, old_word: str|None =None) -> str|None:
     prompt = form_prompt(WORD, is_edit=bool(old_word))
     word = input_dialog(prompt, settings=FIELDS[WORD][SETTINGS], old_value=old_word)
 
     if word is None:
         return None
+#определение языка введенного слова
+    lang_word = detect_language(word)
+    if lang_word is None:
+        print("Некорректно введенное слово.") 
+        return None
 
-#если не редактировали слово, существование в словаре не проверяем
-    if not old_word or (old_word and old_word != word):
-        if must_be and word not in vocabulary:
-            print(f"Слово {word} не найдено в словаре.")         
-            return None     
-        elif not must_be and word in vocabulary:
-            print(f"Слово {word} уже существует в словаре ")
+    if not must_be and lang_word == "rus":
+        print("Слово должно быть введено латиницей.")
+        return None
+
+    key_word = check_existence_word(word, lang_word)
+    if key_word is None:
+        if must_be:
+            print(f"Слово {word} не найдено в словаре.")
             return None
-    
-    return word
+        else:
+            return word
+    else:
+            if not must_be:
+                print(f"Слово {word} уже существует.")
+                return None
+            else:
+                return key_word
 
 
 #функция получения значений записи словаря
@@ -215,8 +237,8 @@ def get_values(old_word: str|None =None) -> dict|None:
         
 #функция добавления слова в словарь
 def add_word() -> None:
-#получаем значение слова
-    word = input_word("добавление", must_be=False)
+    print("Добавление слова в словарь.")
+    word = get_word_key(must_be=False)
     if word is None:
         print("Добавление нового слова отменено.")
         return
@@ -237,13 +259,14 @@ def add_word() -> None:
 
     #функкция редактирования записи
 def edit_word() -> None:
-    word = input_word("редактирование", must_be=True)
+    print("Редактирование записи словаря.")
+    word = get_word_key(must_be=True)
 
     if word is None:
         print("Редактирование отменено.")
         return
     
-    new_word = input_word("редактирование", must_be=False, old_word=word)
+    new_word = get_word_key(must_be=False, old_word=word)
 
     if new_word is None:
             print("редактирование отменено.")
@@ -276,7 +299,8 @@ def edit_word() -> None:
     
 #функция удаления записи
 def delete_word() -> None:
-    word = input_word("удаление", must_be=True)
+    print("Удаление записи словаря.")
+    word = get_word_key(must_be=True)
 
     if word is None:
         print("Удаление отменено.")
@@ -287,31 +311,19 @@ def delete_word() -> None:
         del stats[word]
         print(f"Слово {word} удалено из словаря.")
     else:
-        print("Удаление отменено.")
-    
-#функция отображения записи словаря
-def show_word(word: str) -> None:
-    #print(f"Карточка слова {word}")
-    #for field_name,  params in FIELDS.items():
-        #if field_name == WORD:
-            #print(f'{params[PROMPT].capitalize()}: {word}')
-            #continue
-        #print(f"{params[PROMPT].capitalize()}: {vocabulary[word][field_name]}")
-    
-    show_table(title=f"Карточка слова {word}", data=(vocabulary, word))
-    show_table(title=f"статистика изучения слова {word}", data=(stats, word))
-    
+        print("Удаление отменено.")    
     
 #функция поиска слова 
 def find_word() -> None:
-    word = input_word("поиск", must_be=True)
+    print("Поиск записи слова в словаре.")
+    word = get_word_key(must_be=True)
 
     if word is None:
         print("Поиск слова отменен")
         return
     
-    show_word(word)
-
+    show_table(title=f"Карточка слова {word}", data=(vocabulary, word))
+    show_table(title=f"статистика изучения слова {word}", data=(stats, word))
 #функция вывода списка всех слов из словаря
 def show_all_words() -> None:    
     headers = [["Английское слово"], ["Перевод"], ["Категория"], ["Пример"]]

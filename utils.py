@@ -122,9 +122,8 @@ def choose_item(items: list, default_index: int, old_value: str|None =None) -> i
 
         return int(choice)
     
-
-#определениеязыка символа
-def detect_language_of_letter(char: str) -> str|None:
+#определение языка символа
+def detect_language_of_letter(char: int) -> str|None:
     lat_A = ord("A")
     lat_a = ord("a")
     lat_Z = ord("Z")
@@ -136,9 +135,9 @@ def detect_language_of_letter(char: str) -> str|None:
     rus_special_capital = ord("Ё")
     rus_special_lowercase = ord("ё")
 
-    if (lat_A < char< lat_Z) or (lat_a < char< lat_z):
+    if (lat_A <= char<= lat_Z) or (lat_a <= char<= lat_z):
             char_lang = "lat"
-    elif (rus_firstcapital < char< rus_last_capital) or (rus_first_lowercase < char< rus_last_lowercase) or (char== rus_special_capital) or (char== rus_special_lowercase):
+    elif (rus_firstcapital <= char<= rus_last_capital) or (rus_first_lowercase <= char<= rus_last_lowercase) or (char== rus_special_capital) or (char== rus_special_lowercase):
             char_lang= "rus"
     else:
         return None
@@ -151,6 +150,8 @@ def detect_language(word: str) -> str|None:
     lang_char= detect_language_of_letter(char=char_code)
     if lang_char is not None:
         prev_lang = lang_char
+    else:
+        return None
 
     for char in word[1:]:
         lang_char = detect_language_of_letter(ord(char))
@@ -161,6 +162,7 @@ def detect_language(word: str) -> str|None:
             print("Невозможно определить язык введенного слова.")
             return None
     return prev_lang
+
 
 #функция  очистки экрана
 def clear_screen() -> None:
