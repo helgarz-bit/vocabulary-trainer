@@ -94,6 +94,74 @@ def input_number(prompt: str, min_value: int, max_value: int, old_value: int|Non
 
         return number
 
+#выбор из списка значений
+def choose_item(items: list, default_index: int, old_value: str|None =None) -> int|None:
+
+    while True:
+        choice  = input("Выберите значение из списка. q - отмена")
+
+        if choice == 'q':
+            if old_value:
+                return items.index(old_value)
+            else:
+                return None
+
+        if not choice:
+            if old_value:
+                return items.index(old_value)
+            else:
+                return default_index
+
+        if  not choice.isnumeric():
+            print("Введенное значение не является числом. Попробуйте еще раз!")
+            continue
+
+        if not any (choice == item[0] for item in items):
+            print("Выбран некорректный вариант. Попробуйте еще раз!")
+            continue
+
+        return int(choice)
+    
+
+#определениеязыка символа
+def detect_language_of_letter(char: str) -> str|None:
+    lat_A = ord("A")
+    lat_a = ord("a")
+    lat_Z = ord("Z")
+    lat_z = ord("z")
+    rus_firstcapital = ord("А")
+    rus_first_lowercase = ord("а") 
+    rus_last_capital = ord("Я")
+    rus_last_lowercase = ord("я")
+    rus_special_capital = ord("Ё")
+    rus_special_lowercase = ord("ё")
+
+    if (lat_A < char< lat_Z) or (lat_a < char< lat_z):
+            char_lang = "lat"
+    elif (rus_firstcapital < char< rus_last_capital) or (rus_first_lowercase < char< rus_last_lowercase) or (char== rus_special_capital) or (char== rus_special_lowercase):
+            char_lang= "rus"
+    else:
+        return None
+    
+    return char_lang
+
+#определение языка введенного слова
+def detect_language(word: str) -> str|None:
+    char_code = ord(word[0])
+    lang_char= detect_language_of_letter(char=char_code)
+    if lang_char is not None:
+        prev_lang = lang_char
+
+    for char in word[1:]:
+        lang_char = detect_language_of_letter(ord(char))
+        if lang_char is None:
+            continue
+
+        if lang_char != prev_lang:
+            print("Невозможно определить язык введенного слова.")
+            return None
+    return prev_lang
+
 #функция  очистки экрана
 def clear_screen() -> None:
     if os.name == "nt":

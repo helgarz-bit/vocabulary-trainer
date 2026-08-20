@@ -125,7 +125,7 @@ def display_table(rows: list, width_column: list, headers: list|None) -> None:
                 cells. append(f" {value:<{width_column[col]}}")
             row_line = "|".join(cells)
             print(row_line)
-            print("_" * width_table)
+        print("_" * width_table)
 
 #вывод таблицы на экран
 def show_table(title: str, data: list|tuple, headers: list|None =None) -> None:

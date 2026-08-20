@@ -4,7 +4,7 @@ from copy import deepcopy
 
 from config import                        *
 from storage import  vocabulary, stats
-from utils import  input_dialog, answer_dialog, input_number, clear_screen, pause
+from utils import  input_dialog, answer_dialog, input_number, clear_screen, pause, choose_item
 from display import show_table
 
 DEFAULT_COUNT_WORDS = 5
@@ -19,6 +19,8 @@ STREAK_SHARE_MAX_SCORE = 100
 OVERDUE_MAX_SCORE = 150
 TRANSITION_INTERVAL_THRESHOLD_UP = 2
 TRANSITION_INTERVAL_THRESHOLD_DOWN = 2 
+
+TRANSLATION_MODE = [("1", "английский -> русский"), ("2", "русский -> английский")]
 
 TRAINER_SETTINGS = {
     "validation": True,
@@ -164,15 +166,16 @@ def set_new_status(word: str) -> None:
     stats[word][INTERVAL] = STATUSES[stats[word][STATUS]][INTERVALS][0]
                 
 #функция показа слова из списка
-def training_session(learning_list: list, session_stats: dict) -> bool|None:
-    is_show_stats = True
+def training_session(learning_list: list,  params: tuple, session_stats: dict) -> bool|None:
+    is_success = True
+    _, shows_words,  count_cycles,  translation_mode = params
     print("Начало сессии режима обучения.")
     
-    for  cycle in range(DEFAULT_CYCLES):
+    for  cycle in range(count_cycles):
         random.shuffle(learning_list)
         
         for word in learning_list: 
-            if session_stats[SHOWS] > DEFAULT_MAX_SHOWS:
+            if session_stats[SHOWS] > shows_words:
                 break
             if stats[word]["planed_cycles"] < cycle + 1: #слово прошло все циклы
                 continue
@@ -180,31 +183,39 @@ def training_session(learning_list: list, session_stats: dict) -> bool|None:
             stats[word]["incorrect_per_session"] = 0
             
             stats[word][SHOWS] += 1 #увеличиваем счетчик показов слова
-            word_answer =input_dialog(f"Переведите {word} ", TRAINER_SETTINGS)
+            if translation_mode:
+                word_for_show = word
+                true_answer = translation
+            else:
+                word_for_show = translation
+                true_answer = word
+
+            word_answer =input_dialog(f"Переведите {word_for_show} ", TRAINER_SETTINGS)
             session_stats[SHOWS] +=1
             while word_answer is None:            
                 if answer_dialog("Вы действительно хотите прервать тренировку?"):
                     print("Тренировка прервана.")
-                    return not is_show_stats
+                    return not is_success
                 else:
                     print("Тренировка продолжена.")
-                    word_answer =input_dialog(f"Переведите {word} ", TRAINER_SETTINGS)    
-            if  translation == word_answer:
+                    word_answer =input_dialog(f"Переведите {word_for_show} ", TRAINER_SETTINGS)    
+
+            if  true_answer == word_answer:
                 print("Ответ верный.")  
                 stats[word][STREAK] +=1
                 stats[word][CORRECT] += 1
                 session_stats[CORRECT] +=1
             else:
                 print("Ответ неверный!")
-                print(f"Перевод слова {word} - {translation}")
+                print(f"Перевод слова {word_for_show} - {true_answer}")
                 stats[word][STREAK] = 0
                 stats[word]["incorrect_per_session"] += 1
                 #добавляем еще один показ в текущей сессии
-                if  stats[word]["planed_cycles"] < DEFAULT_CYCLES:
+                if  stats[word]["planed_cycles"] < count_cycles:
                     stats[word]["planed_cycles"] += 1
                 
     print("Сессия завершена.")
-    return is_show_stats
+    return is_successs
 
 #изменение интервала повторения
 def get_new_interval(word: str) -> None:
@@ -222,7 +233,15 @@ def get_new_interval(word: str) -> None:
 def set_next_show(word: str) -> None:
     interval = stats[word][INTERVAL]
     stats[word][NEXT_SHOW]  = date.today() + timedelta(days=interval)
-#установка параметров сессии пользователем
+
+#вывод списка режимов перевода
+def show_translation_mode() -> None:
+    print("Выбор режима перевода".upper())
+    for item in TRANSLATION_MODE:
+        print(item[0], item[1], sep=". ")
+
+
+#установка параметров сессии 
 def set_session_params() -> int:
     
 #установка количества слов
@@ -231,9 +250,31 @@ def set_session_params() -> int:
     if count_words is None:
         print("Ввод отменен.")
         count_words = DEFAULT_COUNT_WORDS
+
+    count_words = int(count_words)
             
-#установка максимального количества циклов
-    return count_words
+#расчет минимального числа показов и числа показов по умолчанию
+    min_shows = int(count_words + count_words * LEARNING_SHARE_FACTOR)
+    default_shows = int(count_words + 2 * count_words * LEARNING_SHARE_FACTOR + count_words * CONSOLIDATING_SHARE_FACTOR)
+    prompt = f"Введите максимальное количество показов за сессию ({min_shows}-{DEFAULT_MAX_SHOWS}) или нажмите Enter, чтобы оставить по умолчанию {default_shows}: "
+    shows_words = input_number(prompt, min_shows, DEFAULT_MAX_SHOWS, default_shows)
+    if shows_words is None:
+        print("Ввод отменен.")
+        shows_words = default_shows
+
+    shows_words = int(shows_words)
+
+            #расчет количества циклов
+    count_cycles = int(shows_words / count_words)
+
+    #выбор режима перевода
+    back_translation = False
+    show_translation_mode()
+    item = choose_item(items=TRANSLATION_MODE, default_index=1)
+    if item == 1:
+        back_translation = True
+
+    return (count_words, shows_words,  count_cycles, back_translation)
 
 #сохранение копии словаря
 def save_start_stats(should_save: bool) -> None:
@@ -280,20 +321,24 @@ def start_session() -> None:
 }
     #сохраняем копию словаря до начала тренировки
     save_start_stats(should_save=True)
-    count_words = set_session_params()
+    session_params= set_session_params()
+    user_count_words, shows_words, count_cycles, TRANSLATION_MODE = session_params
+    print(user_count_words, shows_words, count_cycles, TRANSLATION_MODE)
     calculate_priority()
-    session_list, count_words = get_learning_words(count_words)
+    session_list, count_words = get_learning_words(user_count_words)
     
     if not session_list:
         print("Нет слов для изучения.")
         return
 
     set_counts_cycles(session_list)
-    is_show_stats = training_session(session_list, session_stats)
-    if  is_show_stats:
+    is_successful_finish = training_session(session_list, session_params, session_stats)
+    if  is_successful_finish:
         for word in session_list:
             get_new_interval(word)
             set_new_status(word)
             set_next_show(word)
         prepare_stats_for_display(count_words, session_stats, session_list)
+    else:
+        save_start_stats(should_save=False)
     pause()
