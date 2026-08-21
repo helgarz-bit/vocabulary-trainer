@@ -4,14 +4,13 @@ from copy import deepcopy
 
 from config import                        *
 from storage import  vocabulary, stats
-from utils import  input_dialog, answer_dialog, input_number, clear_screen, pause, choose_item
+from utils import  input_dialog, answer_dialog, input_number, clear_screen, pause, choose_item, show_numbered_list
 from display import show_table
 
 DEFAULT_COUNT_WORDS = 5
 MAX_COUNTS_WORDS = 20
-DEFAULT_MAX_SHOWS = 40
 MIN_COUNTS_WORDS = 5
-DEFAULT_CYCLES = 3
+DEFAULT_MAX_CYCLES = 5
 LEARNING_SHARE_FACTOR = 0.4
 CONSOLIDATING_SHARE_FACTOR = 0.5
 ERROR_SHARE_MAX_SCORE = 400
@@ -168,21 +167,23 @@ def set_new_status(word: str) -> None:
 #функция показа слова из списка
 def training_session(learning_list: list,  params: tuple, session_stats: dict) -> bool|None:
     is_success = True
-    _, shows_words,  count_cycles,  translation_mode = params
+    _, shows_words, translation_mode = params
+    current_show = 0
+    current_cycle = 0
+    max_cycle = max(stats[word]["planed_cycles"] for word in learning_list)
     print("Начало сессии режима обучения.")
     
-    for  cycle in range(count_cycles):
+    while current_show < shows_words and current_cycle < max_cycle:
         random.shuffle(learning_list)
-        
+        current_cycle += 1
         for word in learning_list: 
-            if session_stats[SHOWS] > shows_words:
-                break
-            if stats[word]["planed_cycles"] < cycle + 1: #слово прошло все циклы
+            if stats[word]["planed_cycles"] < current_cycle: #слово прошло все циклы
                 continue
             translation = vocabulary[word][TRANSLATION]
             stats[word]["incorrect_per_session"] = 0
             
-            stats[word][SHOWS] += 1 #увеличиваем счетчик показов слова
+            current_show+= 1 
+            stats[word][SHOWS] += 1
             if translation_mode:
                 word_for_show = word
                 true_answer = translation
@@ -191,7 +192,7 @@ def training_session(learning_list: list,  params: tuple, session_stats: dict) -
                 true_answer = word
 
             word_answer =input_dialog(f"Переведите {word_for_show} ", TRAINER_SETTINGS)
-            session_stats[SHOWS] +=1
+            
             while word_answer is None:            
                 if answer_dialog("Вы действительно хотите прервать тренировку?"):
                     print("Тренировка прервана.")
@@ -211,11 +212,13 @@ def training_session(learning_list: list,  params: tuple, session_stats: dict) -
                 stats[word][STREAK] = 0
                 stats[word]["incorrect_per_session"] += 1
                 #добавляем еще один показ в текущей сессии
-                if  stats[word]["planed_cycles"] < count_cycles:
-                    stats[word]["planed_cycles"] += 1
-                
+                stats[word]["planed_cycles"] += 1
+
+        max_cycle = max(stats[word]["planed_cycles"] for word in learning_list)
+
     print("Сессия завершена.")
-    return is_successs
+    session_stats[SHOWS] = current_show
+    return is_success
 
 #изменение интервала повторения
 def get_new_interval(word: str) -> None:
@@ -224,7 +227,9 @@ def get_new_interval(word: str) -> None:
     max_index = len(STATUSES[stats[word][STATUS]][INTERVALS]) - 1
     min_interval = STATUSES[stats[word][STATUS]][INTERVALS][0]
     current_index = STATUSES[status][INTERVALS].index(interval)
-    if  stats[word][STREAK] >= TRANSITION_INTERVAL_THRESHOLD_UP:
+    if status == "new" and current_index == 0:
+        stats[word][INTERVAL] =  STATUSES[status][INTERVALS][current_index + 1]
+    elif  stats[word][STREAK] >= TRANSITION_INTERVAL_THRESHOLD_UP:
         stats[word][INTERVAL] = STATUSES[status][INTERVALS][min(current_index + 1, max_index)]
     elif stats[word]["incorrect_per_session"] >= TRANSITION_INTERVAL_THRESHOLD_DOWN:
         stats[word][INTERVAL] = STATUSES[status][INTERVALS][min(current_index - 1, 0)]
@@ -233,12 +238,6 @@ def get_new_interval(word: str) -> None:
 def set_next_show(word: str) -> None:
     interval = stats[word][INTERVAL]
     stats[word][NEXT_SHOW]  = date.today() + timedelta(days=interval)
-
-#вывод списка режимов перевода
-def show_translation_mode() -> None:
-    print("Выбор режима перевода".upper())
-    for item in TRANSLATION_MODE:
-        print(item[0], item[1], sep=". ")
 
 
 #установка параметров сессии 
@@ -254,27 +253,25 @@ def set_session_params() -> int:
     count_words = int(count_words)
             
 #расчет минимального числа показов и числа показов по умолчанию
-    min_shows = int(count_words + count_words * LEARNING_SHARE_FACTOR)
+    min_shows = count_words 
+    max_shows = count_words * DEFAULT_MAX_CYCLES
     default_shows = int(count_words + 2 * count_words * LEARNING_SHARE_FACTOR + count_words * CONSOLIDATING_SHARE_FACTOR)
-    prompt = f"Введите максимальное количество показов за сессию ({min_shows}-{DEFAULT_MAX_SHOWS}) или нажмите Enter, чтобы оставить по умолчанию {default_shows}: "
-    shows_words = input_number(prompt, min_shows, DEFAULT_MAX_SHOWS, default_shows)
+    prompt = f"Введите максимальное количество показов за сессию ({min_shows}-{max_shows}) или нажмите Enter, чтобы оставить по умолчанию {default_shows}: "
+    shows_words = input_number(prompt, min_shows, max_shows, default_shows)
     if shows_words is None:
         print("Ввод отменен.")
         shows_words = default_shows
 
     shows_words = int(shows_words)
 
-            #расчет количества циклов
-    count_cycles = int(shows_words / count_words)
-
     #выбор режима перевода
     back_translation = False
-    show_translation_mode()
+    show_numbered_list(TRANSLATION_MODE, "Выбор направления перевода")
     item = choose_item(items=TRANSLATION_MODE, default_index=1)
     if item == 1:
         back_translation = True
 
-    return (count_words, shows_words,  count_cycles, back_translation)
+    return (count_words, shows_words, back_translation)
 
 #сохранение копии словаря
 def save_start_stats(should_save: bool) -> None:
@@ -322,8 +319,8 @@ def start_session() -> None:
     #сохраняем копию словаря до начала тренировки
     save_start_stats(should_save=True)
     session_params= set_session_params()
-    user_count_words, shows_words, count_cycles, TRANSLATION_MODE = session_params
-    print(user_count_words, shows_words, count_cycles, TRANSLATION_MODE)
+    user_count_words, shows_words, TRANSLATION_MODE = session_params
+    
     calculate_priority()
     session_list, count_words = get_learning_words(user_count_words)
     

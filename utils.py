@@ -164,6 +164,15 @@ def detect_language(word: str) -> str|None:
     return prev_lang
 
 
+#вывод на экран нумерованного списка для выбора
+def show_numbered_list(items: list, prompt: str) -> None:
+    clear_screen()
+    print(prompt.upper())
+    for item in items:
+       print(item[0], item[1], sep=". ")     
+
+    
+
 #функция  очистки экрана
 def clear_screen() -> None:
     if os.name == "nt":
