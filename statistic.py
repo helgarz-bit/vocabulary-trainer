@@ -35,16 +35,14 @@ def total_stats() -> None:
         elif values[STATUS] == "reviewing":
             reviewing_words += 1
 
-        total_streak = values[STREAK]
+        total_streak += values[STREAK]
         if values[SHOWS] > 0:
             showed_words += 1
+        
+        if values[STREAK] > max_streak:
+            max_streak = values[STREAK]
 
-        #if values[STREAK] < MIN_STREAK:
-            #min_streak = values[STREAK]
-        #if values[STREAK] > max_streak:
-         #   max_streak = values[STREAK]
-
-            if values[NEXT_SHOW] < date.today():
+        if values[NEXT_SHOW] < date.today():
                 overdue_words += 1
     accuaracy = round(correct / shows * 100, 2) 
     incorrect = shows - correct
@@ -161,7 +159,7 @@ def manager_stats(action: str)    :
             case "stats_word":
                 stats_word()
                 repeat = True
-            case "dificault":
+            case "difficult":
                 stats_difficult_words()
             case "rewrite":
                 set_default()

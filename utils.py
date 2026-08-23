@@ -36,12 +36,12 @@ def check_valid(value: str) -> bool:
     prev_char = ""
     for char in value[1:]:
         if char.isalpha():
+            prev_char = char
             continue
         elif char in {" ", "'", "-"}:
-            if prev_char :
+            if not prev_char.isalpha():
                 return False
-            else:
-                prev_char = char
+            prev_char = char
         else:
             return False
     return True
@@ -95,32 +95,40 @@ def input_number(prompt: str, min_value: int, max_value: int, old_value: int|Non
         return number
 
 #выбор из списка значений
-def choose_item(items: list, default_index: int, old_value: str|None =None) -> int|None:
-
+def choose_item(items: list, default_index: int|None =None, old_value: str|None =None, message: str|None=None) -> int|None:
+    if message is not None:
+        print(message)
+    print("q - отмена")
     while True:
-        choice  = input("Выберите значение из списка. q - отмена")
+        choice  = input("{Выберите вариант:  ")
 
         if choice == 'q':
             if old_value:
                 return items.index(old_value)
             else:
                 return None
+        elif choice == 'a':
+            return -1
 
         if not choice:
             if old_value:
                 return items.index(old_value)
-            else:
+            elif default_index is not None:
                 return default_index
+            else:
+                print("Ничего не выбрано. Попробуйте еще раз!")
+                continue
 
         if  not choice.isnumeric():
             print("Введенное значение не является числом. Попробуйте еще раз!")
             continue
 
-        if not any (choice == item[0] for item in items):
+        choice= int(choice) - 1
+        if choice >= len(items) or choice < 0:
             print("Выбран некорректный вариант. Попробуйте еще раз!")
             continue
 
-        return int(choice)
+        return choice
     
 #определение языка символа
 def detect_language_of_letter(char: int) -> str|None:
@@ -165,14 +173,13 @@ def detect_language(word: str) -> str|None:
 
 
 #вывод на экран нумерованного списка для выбора
-def show_numbered_list(items: list, prompt: str) -> None:
-    clear_screen()
-    print(prompt.upper())
-    for item in items:
-       print(item[0], item[1], sep=". ")     
+def show_numbered_list(items: list, title: str) -> None:
+    #clear_screen()
+    print(title.upper())
+    for key, item in enumerate(items):
+       print(key+1, item, sep=". ")     
 
     
-
 #функция  очистки экрана
 def clear_screen() -> None:
     if os.name == "nt":

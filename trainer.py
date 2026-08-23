@@ -19,7 +19,7 @@ OVERDUE_MAX_SCORE = 150
 TRANSITION_INTERVAL_THRESHOLD_UP = 2
 TRANSITION_INTERVAL_THRESHOLD_DOWN = 2 
 
-TRANSLATION_MODE = [("1", "английский -> русский"), ("2", "русский -> английский")]
+TRANSLATION_MODE = ["английский -> русский", "русский -> английский"]
 
 TRAINER_SETTINGS = {
     "validation": True,
