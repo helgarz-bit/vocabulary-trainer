@@ -131,9 +131,17 @@ def display_table(rows: list, width_column: list, headers: list|None) -> None:
 def show_table(title: str, data: list|tuple, headers: list|None =None) -> None:
     if isinstance(data, tuple):
         dictionary, word = data
-        rows = prepare_data_to_print(dictionary, word)
+        if vocabulary:
+            rows = prepare_data_to_print(dictionary, word)
+        else:
+            print("Словарь пуст. Вывод данных невозможен.")
+            return
     else:
-        rows = prepare_data_to_print(data)
+        if data:
+                rows = prepare_data_to_print(data)
+        else:
+            print("Данные отсутствуют. Вывод данных невозможен.")
+            return
     
     
     width_columns = calculat_width_column(rows, headers)

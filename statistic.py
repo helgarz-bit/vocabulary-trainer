@@ -5,6 +5,7 @@ from datetime import date
 from config import  *
 from utils import input_dialog, answer_dialog, clear_screen, what_to_do
 from storage import vocabulary, stats
+from dictionary import get_word_key as get_key
 from display import show_table
 DIFFICULT_THRESHOLD = 0.6
 MIN_SHOWS_FOR_STATS = 5
@@ -42,8 +43,12 @@ def total_stats() -> None:
         if values[STREAK] > max_streak:
             max_streak = values[STREAK]
 
-        if values[NEXT_SHOW] < date.today():
-                overdue_words += 1
+        if (values[NEXT_SHOW] is not None) and (values[NEXT_SHOW] < date.today()):
+            overdue_words += 1
+
+    if shows == 0:
+        print("Статистика по словам отсутствует. Вывод данных невозможен.")
+        return
     accuaracy = round(correct / shows * 100, 2) 
     incorrect = shows - correct
     mean_streak = round(total_streak / showed_words , 2)
@@ -87,7 +92,7 @@ def show_stats_word(word: str) -> None:
 def stats_word() -> None:
     print("Вывод статистики по выбранному слову. Для отмены введите 'q'")
     
-    word = input_dialog("Введите слово для отображения по нему статистики: ", FIELDS[WORD][SETTINGS])
+    word =  get_key(must_be=True,  )
 
     if word is None:
         print("Вывод статистики отменен")
@@ -113,44 +118,14 @@ def set_default() -> None:
         print("Статистика успешно обнулена.")
     else:
         print("Обнуление статистики отменено.")
-
-
-#разбиение длинного слова на части фиксированной длины
-def split_long_word(word: str, width: int) -> list:
-    parts_word = []
-    i = 0
-    while i < len(word):
-        part = word[i:i+width-1]
-        if i + width < len(word):
-            part += "-"
-
-        parts_word.append(part)
-        i += width - 1
-    return parts_word
-
-
-#разбиение длинной строки на строки фиксированной длины
-def split_into_lines(text: str, width: int)-> list:
-    lines = []
-    current_line = []     
-    words = text.split()
-    for word in words:
-        current_line.append(word) 
-        if len(" ".join(current_line)) > width:
-             current_line.pop()
-             lines.append(" ".join(current_line))
-             current_line.clear()
-             current_line.append(word)
-
-    if current_line:
-         lines.append(" ".join(current_line))
-    return lines
-
-            
           
 #менеджер функций
 def manager_stats(action: str)    :
     clear_screen()
+    if not stats:
+        print("Данные статистики отсутствуют. Вывод данных невозможен.")
+        input("Нажмите Enter для возврата в меню")
+        return
     repeat = False
     while True:
         match action:

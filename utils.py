@@ -98,9 +98,9 @@ def input_number(prompt: str, min_value: int, max_value: int, old_value: int|Non
 def choose_item(items: list, default_index: int|None =None, old_value: str|None =None, message: str|None=None) -> int|None:
     if message is not None:
         print(message)
-    print("q - отмена")
+    print("q - отменsа")
     while True:
-        choice  = input("{Выберите вариант:  ")
+        choice  = input("Выберите вариант:  ")
 
         if choice == 'q':
             if old_value:
