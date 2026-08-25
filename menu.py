@@ -1,5 +1,5 @@
 from utils import clear_screen
-from dictionary import manager_dict
+from dictionary import manager_dict, manager_categories
 from statistic import manager_stats
 from trainer import start_session
 
@@ -45,7 +45,7 @@ DICTIONARY_MENU = {
         "argument": "delete"},
         "4": {
              "title": "Управление категориями",
-             "object": CATEGORY_MENU,},
+             "object": manager_categories,},
     "0": {
         "title": "Назад"}
 }
@@ -61,6 +61,11 @@ FIND_MENU = {
         "title": "Показать список всех слов",
         "object": manager_dict,
         "argument": "all"},
+        "3": {
+             "title": "Поиск по категории",
+             "object": manager_dict,
+             "argument": "find_by_cat"
+        },
 "0": {
     "title": "Назад"}
     }}

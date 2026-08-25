@@ -1,14 +1,18 @@
 from storage import vocabulary, stats, categories
 from utils import answer_dialog, input_dialog, pause, clear_screen, what_to_do, detect_language, show_numbered_list, choose_item
 from config import *
-from statistic import show_stats_word
+
 from display  import show_table, prepare_data_to_print
+
+
+     
 
 #установка категории для слова
 def set_category(is_add_new: bool =False, old_category: str|None =None) -> str:
+    print("\n")
     if  old_category is not None:
-        message= f'текущая категория - {old_category}. Нажмите "Enter", чтобы оставить категорию без изменения.'
-    if is_add_new:
+        message= f'текущая категория - {old_category}. Нажмите "Enter", чтобы оставить категорию без изменения. \na - добавление новой категории'
+    elif is_add_new:
         message= "a - добавление новой категории"
     else: 
         message = None
@@ -110,6 +114,29 @@ def delete_category() -> None:
         print(f"Удаление категории {category} отменено.")
 
     appointment_category(category, DEFAULT_CATEGORY)
+
+#вывод списка категорий
+def manager_categories() -> None:
+    while True:
+        show_numbered_list(categories, "Список категорий")
+        print("a - добавить категорию")
+        print("e - редактировать категорию")
+        print("d - удалить категорию")
+        print("m - возврат в меню")
+        choice = input("Выберите дйствие: ")
+        clear_screen()
+        if choice== 'a':
+            add_category()
+        elif choice == 'e':
+            edit_category()
+        elif choice == 'd':
+            delete_category()
+        elif choice == 'm':
+            return
+        else:
+            print("Введена неизвестная команда. Попробуйте еще раз!")
+        
+
 
 #функция инициализации статистики
 def set_stats(word: str) -> None:
@@ -316,7 +343,23 @@ def show_all_words() -> None:
 
 
 #поиск по категории
-#def search_by_category():
+def search_by_category():
+    show_numbered_list(categories, "Список категорий")
+    choice = choose_item(categories, default_index=0)
+    if choice == None:
+        return
+
+    rows = []
+    selected_values = [word for word, values in vocabulary.items() if values[CATEGORY] == categories[choice] ]
+    for word in selected_values:
+        row = (word, vocabulary[word][TRANSLATION], vocabulary[word][EXAMPLE])
+        rows.append(row)
+
+    headers = [["English word"], ["Перевод"], ["Пример"]]
+    title = f"Слова категории {categories[choice]}"
+
+    show_table(title=title, data=rows, headers=headers)
+    
 
 #начальная функция
 def manager_dict(action: str) -> None:
@@ -335,12 +378,10 @@ def manager_dict(action: str) -> None:
             case "all":
                 repeat = False
                 show_all_words()
-            case "add_cat":
-                add_category()
-            case "edit_cat":
-                edit_category()
-            case "delete_cat":
-                delete_category()
+            case "find_by_cat":
+                repeat  = True
+                search_by_category()
+
             case "return":
                 break
     
