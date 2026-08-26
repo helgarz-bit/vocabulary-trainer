@@ -5,7 +5,7 @@ from datetime import date
 from config import  *
 from utils import input_dialog, answer_dialog, clear_screen, what_to_do
 from storage import vocabulary, stats
-from dictionary import get_word_key as get_key
+from dictionary import get_word_key
 from display import show_table
 DIFFICULT_THRESHOLD = 0.6
 MIN_SHOWS_FOR_STATS = 5
@@ -88,11 +88,40 @@ def show_stats_word(word: str) -> None:
     print(f"Статистика изучения слова {word}")
     for param_key, prompt in stats_fields.items():
             print(f"{prompt}:  {stats[word][param_key]}")
+#статистика по результатам сессии
+def stats_session_results(start_stats: dict, session_list: list) -> None:
+    session_words_stats = []
+    
+    headers = [["English word/", "Перевод"], ["Всего", "показов"], ["Верных/", "неверных", "ответов"], ["Верных", "ответов", "подряд"], ["Интервал"], ["Срок", "показа"], ["Статус", "до сессии"], ["Статус", "после", "сессии"]]
+    total_shows = sum(stats[word][SHOWS]  - start_stats[word][SHOWS] for word in session_list) 
+    total_correct =sum(stats[word][CORRECT] - start_stats[word][CORRECT] for word in session_list) 
+    total_incorrect = total_shows - total_correct
+    accuracy = round(total_correct / total_shows  * 100, 2)
+    count_words = len(session_list)
+
+    total_session_stats = [("Всего показано слов:", str(count_words)), ("Всего ответов:", str(total_shows)), ("Всего правильных ответов:", str(total_correct)), ("Всего неправильных ответов:", str(total_incorrect)), ("Общая точность ответов:", str(accuracy) + "%")]
+    show_table(title="Общая статистика прогресса обучения за сессию", data=total_session_stats)
+
+    for word in session_list:
+        shows = stats[word][SHOWS] - start_stats[word][SHOWS]
+        correct = stats[word][CORRECT] - start_stats[word][CORRECT]
+        incorrect = shows - correct
+        streak = stats[word][STREAK]
+        interval = stats[word][INTERVAL]
+        next_show = stats[word][NEXT_SHOW]
+        old_status = start_stats[word][STATUS]
+        new_status = stats[word][STATUS]
+    
+        line = ([word, vocabulary[word][TRANSLATION]], str(shows), str(correct) + "/" + str(incorrect), str(streak), str(interval), next_show.strftime("%d.%m.%y"), old_status, new_status)
+        session_words_stats.append(line)
+
+    show_table("Прогресс по результатам сессии", session_words_stats, headers)
+
 
 def stats_word() -> None:
     print("Вывод статистики по выбранному слову. Для отмены введите 'q'")
     
-    word =  get_key(must_be=True,  )
+    word =  get_word_key(must_be=True,  )
 
     if word is None:
         print("Вывод статистики отменен")
