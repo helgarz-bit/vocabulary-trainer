@@ -1,17 +1,32 @@
-import os
-import shutil
 from datetime import date
 
-from config import  *
-from utils import input_dialog, answer_dialog, clear_screen, what_to_do
+from utils import answer_dialog, clear_screen, what_to_do, pause
 from storage import vocabulary, stats
 from dictionary import get_word_key
 from display import show_table
-DIFFICULT_THRESHOLD = 0.6
+from config import  (
+    SHOWS,
+    CORRECT,
+    STREAK,
+    INTERVAL,
+    NEXT_SHOW,
+    LAST_WRONG,
+    STATUS,
+    TRANSLATION,
+    DIFFICULT_THRESHOLD,
+    NEW,
+    LEARNING,
+    CONSOLIDATING,
+    REVIEWING,
+    STATUSES,
+    INTERVALS
+
+)
+    
 MIN_SHOWS_FOR_STATS = 5
 
 #общая статистика
-def total_stats() -> None:
+def show_total_stats() -> None:
     new_words = 0
     learning_words = 0
     consolidating_words = 0
@@ -19,21 +34,21 @@ def total_stats() -> None:
     shows = 0
     correct = 0
     showed_words = 0
-    min_streak = 0
     max_streak = 0
     total_streak = 0
     overdue_words = 0
     total_words =     len(vocabulary)
+    today = date.today()
     for values in stats.values():
         shows += values[SHOWS]
         correct += values[CORRECT]
-        if values[STATUS] == "new":
+        if values[STATUS] == NEW:
             new_words += 1
-        elif values[STATUS]     == "learning":
+        elif values[STATUS]     == LEARNING:
             learning_words += 1
-        elif values[STATUS] == "consolidating":
+        elif values[STATUS] == CONSOLIDATING:
             consolidating_words += 1
-        elif values[STATUS] == "reviewing":
+        elif values[STATUS] == REVIEWING:
             reviewing_words += 1
 
         total_streak += values[STREAK]
@@ -43,13 +58,13 @@ def total_stats() -> None:
         if values[STREAK] > max_streak:
             max_streak = values[STREAK]
 
-        if (values[NEXT_SHOW] is not None) and (values[NEXT_SHOW] < date.today()):
+        if (values[NEXT_SHOW] is not None) and (values[NEXT_SHOW] < today):
             overdue_words += 1
 
     if shows == 0:
-        print("Статистика по словам отсутствует. Вывод данных невозможен.")
-        return
-    accuaracy = round(correct / shows * 100, 2) 
+        accuracy      = 0
+    else:    
+        accuracy = round(correct / shows * 100, 2) 
     incorrect = shows - correct
     mean_streak = round(total_streak / showed_words , 2)
     total_stats = [
@@ -58,11 +73,11 @@ def total_stats() -> None:
      ("изучаются", str(learning_words)),
      ("закрепляются", str(consolidating_words)),
       ("повторяются", str(reviewing_words)),
-      ("Всего показано слов", str(showed_words)),
+      ("Всего показано слов ", str(showed_words)),
       ("дано ответов", str(shows)),
        ("верных ответов", str(correct)),
        ("неверных ответов", str(incorrect)),
-       ("точность ответов", str(accuaracy)),
+       ("точность ответов", str(accuracy)),
        ("максимальная серия верных ответов", str(max_streak)),
        ("средняя серия верных ответов", str(mean_streak)),
        ("слов с просроченным сроком повторения", str(overdue_words))
@@ -71,25 +86,26 @@ def total_stats() -> None:
 
 
 #вывод списка самых трудных слов
-def stats_difficult_words():
-    print('Список "трудных" слов')
-    show_words_list = [(word, values[CORRECT], values[SHOWS]) for word, values in stats.items() if values[SHOWS] > 0]
-    difficult_list = [item for item in show_words_list if item[1]/item[2] < DIFFICULT_THRESHOLD and item[2] >= MIN_SHOWS_FOR_STATS]
+def show_difficult_words() -> None:
+    title = 'Список "трудных" слов'
+    rows = []
+    headers = [["Слово"], ["Точность ответов"], ["Верных ответов"], ["Всего ответов"]]
+
+#слова с достаточным количеством показов и низкой точностью ответов
+    difficult_list = [(word, values[CORRECT], values[SHOWS]) for word, values in stats.items() if values[SHOWS] >= MIN_SHOWS_FOR_STATS and values[CORRECT] / values[SHOWS] < DIFFICULT_THRESHOLD]
         
     if difficult_list:
-        difficult_list.sort(key=lambda item: item[1]/item[2])
-        for word, correct, shows in difficult_list:
-                print(f"{word} - {correct/shows * 100:.2f}% {correct} из {shows} верных ответов")
+        difficult_list.sort(key=lambda item: item[1])
+        for element in difficult_list:
+            row = (element[0], f"{element[1] / element[2] * 100:.2f} %", str(element[1]), str(element[2]))
+            rows.append(row)
+
+        show_table(title=title, data=rows, headers=headers)
     else:
         print("Трудных слов не найдено.")
 
-        #вывод статистики по отдельному слову
-def show_stats_word(word: str) -> None:
-    print(f"Статистика изучения слова {word}")
-    for param_key, prompt in stats_fields.items():
-            print(f"{prompt}:  {stats[word][param_key]}")
-#статистика по результатам сессии
-def stats_session_results(start_stats: dict, session_list: list) -> None:
+        #статистика по результатам сессии
+def show_session_results(start_stats: dict, session_list: list) -> None:
     session_words_stats = []
     
     headers = [["English word/", "Перевод"], ["Всего", "показов"], ["Верных/", "неверных", "ответов"], ["Верных", "ответов", "подряд"], ["Интервал"], ["Срок", "показа"], ["Статус", "до сессии"], ["Статус", "после", "сессии"]]
@@ -118,8 +134,8 @@ def stats_session_results(start_stats: dict, session_list: list) -> None:
     show_table("Прогресс по результатам сессии", session_words_stats, headers)
 
 
-def stats_word() -> None:
-    print("Вывод статистики по выбранному слову. Для отмены введите 'q'")
+def show_word_stats() -> None:
+    print("Вывод статистики по выбранному слову.\nq - отмена")
     
     word =  get_word_key(must_be=True,  )
 
@@ -128,14 +144,14 @@ def stats_word() -> None:
         return
 
     if word  not in stats:
-         print(f"Статистика по слову {word} не найдено.")
-    
+        print(f"Статистика по слову {word} не найдено.")
+        return 
+
     show_table(title=f"статистика изучения слова {word}", data=(stats, word))
 
 #обнуление статистики
-def set_default() -> None:
-    answer = answer_dialog("Вы действительно хотите обнулить статистику?")  
-    if answer:
+def reset_stats() -> None:
+    if answer_dialog("Вы действительно хотите обнулить статистику?"):
         for  word, value in stats.items():
             value[SHOWS] = 0
             value[CORRECT] = 0
@@ -148,29 +164,49 @@ def set_default() -> None:
     else:
         print("Обнуление статистики отменено.")
           
+#сводная таблица по статистике слов
+def show_summary_stats() -> None:
+    rows = []
+    title = "Сводная таблица статистики изучения слов"
+    headers = [["Слово"], ["Перевод"], ["Всего", "показов"], ["Верных", "ответов"], ["Неверных ", "ответов"], ["Серия", "верных", "ответов"], ["Интервал", "повторения"], ["Срок", "повторения"], ["Статус"]]
+
+    for word, values in stats.items():
+        shows = values[SHOWS]
+        correct = values[CORRECT]
+        incorrect = shows - correct
+        streak = values[STREAK]
+        interval = values[INTERVAL]
+        if values[NEXT_SHOW]:
+            next_show = values[NEXT_SHOW].strftime("%d.%m.%y")
+        else:
+            next_show = "-"
+        status = values[STATUS]
+        row = (word, vocabulary[word][TRANSLATION], str(shows), str(correct), str(incorrect), str(streak), str(interval), next_show, status)
+        rows.append(row)
+    show_table(title=title, data=rows, headers=headers)
 #менеджер функций
 def manager_stats(action: str)    :
     clear_screen()
     if not stats:
         print("Данные статистики отсутствуют. Вывод данных невозможен.")
-        input("Нажмите Enter для возврата в меню")
+        pause()
         return
     repeat = False
     while True:
         match action:
             case "total":
-                total_stats()
+                show_total_stats()
             case "stats_word":
-                stats_word()
+                show_word_stats()
                 repeat = True
             case "difficult":
-                stats_difficult_words()
-            case "rewrite":
-                set_default()
+                show_difficult_words()
+            case "summary":
+                show_summary_stats()
+            case "reset":
+                reset_stats()
             case "return":
                 break
 
-        do = what_to_do(repeat=repeat)
-        if do != 'r':
-            action = do
-    
+        action = what_to_do(repeat=repeat, action=action)
+        
