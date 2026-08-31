@@ -3,9 +3,9 @@ from datetime import date, timedelta
 from copy import deepcopy
 
 from config import                        *
-from storage import  vocabulary, stats, load_json, convert_date_to_string, load, convert_string_to_date, categories
+from storage import  vocabulary, stats 
 from utils import  input_dialog, answer_dialog, input_number, clear_screen, pause, choose_item, show_numbered_list
-from statistic import stats_session_results
+from statistic import show_session_results
 
 DEFAULT_COUNT_WORDS = 5
 MAX_COUNTS_WORDS = 20
@@ -18,7 +18,7 @@ STREAK_SHARE_MAX_SCORE = 50
 OVERDUE_SCORE_PER_DAY = 150
 TRANSITION_INTERVAL_THRESHOLD_UP = 2
 TRANSITION_INTERVAL_THRESHOLD_DOWN = 2 
-DIFFICULT_THRESHOLD = 0.4
+
 
 PRIORITY = "priority"
 REQUIRED_CORRECT = "required_correct"
@@ -35,7 +35,18 @@ TRAINER_SETTINGS = {
 start_stats = {}
 
 #получение списка слов на сессию
-def get_learning_words(count_words: int) -> tuple[list[str, ...], int]:
+def get_learning_words(count_words: int) -> list:
+    """Формирует список словдля текущей учебной сессии.
+
+    Выбирает  слова с учетом их статуса и приоритета, а также распределяет
+    между группами статусов в соответствии с заданными долями.
+    В первую очередь выбираются трудные и просроченные слова.
+    Args:
+        count_words: количество слов в текущей сессии.
+        
+    Returns:
+        Список слов, выбранных для текущей сессии.
+    """
     learning_list = []
     consolidating_list = []
     reviewing_list = []
@@ -101,10 +112,17 @@ def get_learning_words(count_words: int) -> tuple[list[str, ...], int]:
     total_list = learning_list[:required_count[0]] + consolidating_list[:required_count[1]] + reviewing_list[:required_count[2]] + additional_consolidating_list[:required_count[3]] + additional_reviewing_list[:required_count[4]]
     
     session_list = [word for word, _ in total_list]
-    return (session_list, count_words)
+    return session_list 
 
 #расчет приоритета 
 def calculate_priority() -> None:
+    """Расчитывает и сохраняет приоритет слов.
+
+    Приоритет расчитывается с учетом статуса слова, пропуска срока повторения,
+    доли неправильных ответов и серии правильных ответов.
+    Слова со статусом 'postponed' не обрабатываются.
+    Результат расчета сохраняется в словаре статистики каждого слова.
+    """
     for word, values in stats.items():
         if values[STATUS] == "postponed":
             continue
@@ -158,6 +176,18 @@ def set_counts_cycles(words_list: list) -> None:
                 
 #изменение статуса
 def set_new_status(word: str) -> None:   
+    """Обновляет статусы слова в зависимости от результатов его изучения.
+    
+    Переводит слово на следующий или предыдущий статус в зависимости от
+    количества показов, точности ответов, серии верных ответов,
+    интервала повторения и количества ошибок.
+    При изменении статуса устанавливается начальный для этого статуса интервал повторения.
+    Если условия перехода не выполняются, 
+    данные слова не изменяются.
+
+    Args:
+        word: Слово, для которого проверяются условия перехода
+    """
     shows = stats[word][SHOWS]
     if shows != 0:
         accuracy = stats[word][CORRECT]/shows
@@ -186,13 +216,36 @@ def set_new_status(word: str) -> None:
             return
 
     stats[word][STATUS] = statuses_list[index]
-    #первыое значение списка интервалов для нового статуса
+    #первое значение списка интервалов для нового статуса
     stats[word][INTERVAL] = STATUSES[stats[word][STATUS]][INTERVALS][0]
                 
 #функция показа слова из списка
 def training_session(session_words: list,  training_params: tuple) -> bool:
+    """Проводит учебную сессию для списка выбранных слов.
+    
+    В ходе сессии слова предъявляются в случайном порядке до тех пор, пока
+    для каждого слова не будет набрано необходимое количество правильных ответов
+    или не будет достигнут лимит показов слов на сессию.
+    При правильном ответе увеличивает счетчик серии правильных ответов,
+    общее количество правильных ответов и уменьшает
+    количество оставшихся необходимых правильных ответов.
+    При неправильном ответе сбрасывает серию правильных ответов и
+    увеличивает число неверных ответов за сессию.
+    Пользователь может прервать сессию в любой момент. При этом
+    результаты текущей сессии не сохраняются.
+    При условии полностью завершенной сессии есть возможность
+    вывести на экран результаты обучения за сессию.
+
+    Args:
+        session_words: Список слов,участвующий в учебной сессии.
+        training_params: Параметры сессии
+
+    Returns:
+        True: если сессия завершена
+        False: если сессия прервана
+    """
     is_session_complete = False
-    _, max_shows, translation_mode = training_params
+    _, max_shows, back_translation = training_params
     session_shows = 0
     remaining_cycles = max(stats[word][REQUIRED_CORRECT] for word in session_words)
     print("Начало сессии режима обучения.")
@@ -210,9 +263,10 @@ def training_session(session_words: list,  training_params: tuple) -> bool:
                 continue
 
             translation = vocabulary[word][TRANSLATION]
+            session_shows += 1
             stats[word][SHOWS] += 1
             
-            if translation_mode:
+            if not back_translation:
                 prompt_word = word
                 correct_answer = translation
             else:
@@ -250,6 +304,15 @@ def training_session(session_words: list,  training_params: tuple) -> bool:
 
 #изменение интервала повторения
 def get_new_interval(word: str) -> None:
+    """Обновляет интервал повторения по результатам тренировки.
+    
+    Увеличивает интервал при достижении необходимой серии правильных ответов
+    и уменьшает его при достижении установленного числа ошибок 
+    за текущую сессию.
+    
+    Args:
+        word: слово, для которого изменяется интервал повторения.
+        """
     interval = stats[word][INTERVAL]
     status = stats[word][STATUS]
     max_index = len(STATUSES[stats[word][STATUS]][INTERVALS]) - 1
@@ -259,11 +322,10 @@ def get_new_interval(word: str) -> None:
         stats[word][INTERVAL] =  STATUSES[status][INTERVALS][current_index + 1]
     elif  stats[word][STREAK] >= TRANSITION_INTERVAL_THRESHOLD_UP:
         stats[word][INTERVAL] = STATUSES[status][INTERVALS][min(current_index + 1, max_index)]
-    elif stats[word]["incorrect_per_session"] >= TRANSITION_INTERVAL_THRESHOLD_DOWN:
+    elif stats[word][SESSION_ERRORS] >= TRANSITION_INTERVAL_THRESHOLD_DOWN:
         stats[word][INTERVAL] = STATUSES[status][INTERVALS][max(current_index - 1, 0)]
-        print(stats[word]["incorrect_per_session"] )
-        print(stats[word][INTERVAL] )
-
+        
+    
 #установка следующей даты повторения
 def set_next_show(word: str) -> None:
     interval = stats[word][INTERVAL]
@@ -272,6 +334,16 @@ def set_next_show(word: str) -> None:
 
 #установка параметров сессии 
 def set_session_params() -> tuple[int, int, bool]|None:
+    """Запрашивает и формирует параметры учебной сессии.
+    
+    Запрашивает количество слов, максимальное число показов и направление перевода.
+    Проверяет доступное количество слов и при необходимости
+    предлагает продолжить с меньшим количеством слов.
+        
+    Returns:
+        Кортеж с количеством слов, максимальным числом показов и
+        направлением перевода или None, если настройка прервана.
+        """
     
 #установка количества слов
     prompt = f"Введите количество слов для изучения (5-20) или нажмите Enter, чтобы оставить по умолчанию {DEFAULT_COUNT_WORDS}: "
@@ -312,6 +384,12 @@ def set_session_params() -> tuple[int, int, bool]|None:
 
 #сохранение копии словаря
 def save_start_stats(should_save: bool) -> None:
+    """Сохраняет начальную статистику обучения слов или восстанавливает ее.
+    
+    Args:
+        should_save: Определяет сохранить начальную статистику перед сессией или 
+        восстановить ранее сохраненную при прерывании сессии.
+    """
     if should_save:
         start_stats.clear()
         start_stats.update(deepcopy(stats))
@@ -322,6 +400,18 @@ def save_start_stats(should_save: bool) -> None:
 
 #функция запуска режима тренировки
 def start_session() -> None:
+    """Запускает учебную сессию и управляет ею.
+    
+    Проверяет наличие словаря и статистики, сохраняет начальную статистику,
+    получает параметры сессии, формирует список слов для изучения 
+    и запускает тренировку.
+    После успешного завершения сессии обновляет интервалы повторения,
+    статусы и даты следующих повторений слов.
+    По желанию пользователя выводит на экран
+    статистику по результатам проведенной сессии.
+    При прерывании сессии восстанавливает статистику,
+    сохраненную перед началом сессии.
+    """
     clear_screen()
     if not vocabulary:
         print("В словаре нет слов. Тренировка отменена.")
@@ -336,14 +426,14 @@ def start_session() -> None:
 #получение параметров сессии
     session_params= set_session_params()
     if session_params:
-        user_count_words, shows_words, TRANSLATION_MODE = session_params
+        user_count_words, *_ = session_params
     else:
         print("Тренировка отменена.")
         pause()
         return
     
     calculate_priority()
-    session_list, count_words = get_learning_words(user_count_words)
+    session_list = get_learning_words(user_count_words)
     
     if not session_list:
         print("Нет слов для изучения.")
@@ -358,7 +448,7 @@ def start_session() -> None:
             set_new_status(word)
             set_next_show(word)
         if answer_dialog("Вывести статистику по результатам сессии на экран?"):
-            stats_session_results(start_stats, session_list)        
+            show_session_results(start_stats, session_list)        
     else:
         save_start_stats(should_save=False)
     pause()
