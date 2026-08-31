@@ -1,37 +1,52 @@
 import os
 
+from config import ACTIONS, PROMPT
+
 #функция диалога с ответами "да"\"нет"
 def answer_dialog(prompt: str) -> bool:
     while True:
         answer = input(f"{prompt} Введите y/n(д/н): ").strip().lower()
             
-        if answer == 'y' or answer == 'д':
+        if answer in {'y', 'д'}:
             return True
-        elif answer == 'n' or 'н':
+        elif answer in {'n', 'н'}:
             return False
         print("Введен недопустимый вариант. Попробуйте еще раз!")
 
 #управление действием
-def what_to_do(repeat: bool) -> str:
+def what_to_do(repeat: bool, action: str|None =None) -> str:
     prompt = ""
     if repeat:
-        prompt = "Введите r для повторения действия."
+        prompt = f"r - повторить {ACTIONS[action][PROMPT]}."
     while True:
-        do = input(f'Введите m - вернуться в меню\n{prompt}')
+        do = input(f'm - вернуться в меню\n{prompt}')
         if do == "m":
             return "return"
         elif repeat and do == "r":
-            return 'r'
+            return action
         else:
             print("Введена недопустимая команда. Попробуйте еще раз!")
 
 #функция проверки ввода слова
 def check_valid(value: str) -> bool:
+    """Проверяет слово на соответствие правилам написания слова.
+    
+    Строка должна начинаться с буквы и заканчиваться ею.
+    Внутри строки допускаются буквы. апострофы, дефисы и пробелы.
+    Два символа, не являющихся буквами, не могут следовать друг за другом подряд.
+    
+    Args:
+        value: Строка, которую необходимо проверить.
+        
+    Returns:
+        True, если строка соответствует правилам,
+        False - иначе.
+    """
 #проверка первого символа
     char = value[0]
     if not char.isalpha():
         print("Слово должно начинаться с буквы! ")
-        return
+        return False
 
     prev_char = ""
     for char in value[1:]:
@@ -44,10 +59,33 @@ def check_valid(value: str) -> bool:
             prev_char = char
         else:
             return False
+#проверка последнего символа
+    if not char.isalpha():
+        return False
     return True
     
 #функция обработки ввода  слова
 def input_dialog(prompt: str,settings: dict, old_value: str|None = None) -> str|None:
+    """Запрашивает значение  строковой переменной 
+    у пользователя и обрабатывает его.
+    
+    Пользователь может ввести q для отмены ввода.
+    При редактировании пустой ввод оставляет прежнее значение.
+    Для обязательного поля пустой ввод не допускается.
+    В зависимости от настроек, введенное значение может быть приведено к нижнему регистру
+    и проверено на соответствие правилам ввода.
+    
+    Args: 
+        prompt: Текст приглашения для ввода.
+         settings:  Настройки поля, должны содержатьпараметры
+         required, to_lower, validation.
+         old_value: Предыдущее значение поля при редактировании.
+         Если указано, то пустой ввод возвращает это значение.
+         
+     Returns:
+        Введенное и обработанное значение. Возвращает old_value при пустом
+        вводе при редактировании или None, если пользователь отменил ввод.
+    """ 
     while True:
         in_value = input(f'{prompt} ').strip()
         if in_value == 'q':
@@ -96,11 +134,30 @@ def input_number(prompt: str, min_value: int, max_value: int, old_value: int|Non
 
 #выбор из списка значений
 def choose_item(items: list, default_index: int|None =None, old_value: str|None =None, message: str|None=None) -> int|None:
+    """Запрашивает у пользователя выбор элемента из списка.
+    
+    Пользователь может выбрать элемент, введя его порядковый номер,
+    либо использовать специальные команды:
+    q - отменяет выбор, a - возвращает значение -1.
+    При пустом вводе возвращается предыдущее значение, если оно указано.
+    Если предыдущего значения нет, используется значение по умолчанию, если указано.
+
+    Args:
+        items: Список элементов, из которого проводится выбор.
+        default_index: Индекс элемента, используемого по умолчанию при пустом вводе.
+        old_value: Предыдущее значение элемента. Используется  при редактировании
+        для сохранения текущего выбора.
+        message: Дополнительное сообщение.
+         
+    Returns: 
+        Индекс выбранного элемента. -1 при выборе команды 'a'
+        None при отмене выбора.
+    """
     if message is not None:
         print(message)
-    print("q - отменsа")
+    print("q - отмена")
     while True:
-        choice  = input("Выберите вариант:  ")
+        choice  = input("Выберите вариант:  ").strip()
 
         if choice == 'q':
             if old_value:
@@ -131,7 +188,7 @@ def choose_item(items: list, default_index: int|None =None, old_value: str|None 
         return choice
     
 #определение языка символа
-def detect_language_of_letter(char: int) -> str|None:
+def detect_language_of_letter(char_code: int) -> str|None:
     lat_A = ord("A")
     lat_a = ord("a")
     lat_Z = ord("Z")
@@ -143,9 +200,9 @@ def detect_language_of_letter(char: int) -> str|None:
     rus_special_capital = ord("Ё")
     rus_special_lowercase = ord("ё")
 
-    if (lat_A <= char<= lat_Z) or (lat_a <= char<= lat_z):
+    if (lat_A <= char_code <= lat_Z) or (lat_a <= char_code <= lat_z):
             char_lang = "lat"
-    elif (rus_firstcapital <= char<= rus_last_capital) or (rus_first_lowercase <= char<= rus_last_lowercase) or (char== rus_special_capital) or (char== rus_special_lowercase):
+    elif (rus_firstcapital <= char_code <= rus_last_capital) or (rus_first_lowercase <= char_code <= rus_last_lowercase) or (char_code == rus_special_capital) or (char_code == rus_special_lowercase):
             char_lang= "rus"
     else:
         return None
@@ -155,7 +212,7 @@ def detect_language_of_letter(char: int) -> str|None:
 #определение языка введенного слова
 def detect_language(word: str) -> str|None:
     char_code = ord(word[0])
-    lang_char= detect_language_of_letter(char=char_code)
+    lang_char= detect_language_of_letter(char_code=char_code)
     if lang_char is not None:
         prev_lang = lang_char
     else:
@@ -187,6 +244,6 @@ def clear_screen() -> None:
     else:
         os.system("clear")
 
-#ожидание нажатия ENter
+    #ожидание нажатия Enter
 def pause() -> None:
     input("\nНажмите Enter для продолжения.")

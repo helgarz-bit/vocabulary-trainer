@@ -9,24 +9,6 @@ OBJECT = "object"
 ITEMS = "items"
 ARGUMENT = "argument"
 
-CATEGORY_MENU = {
-     "name": "УПРАВЛЕНИЕ КАТЕГОРИЯМИ",
-     "items": {
-          "1": {
-               "title": "Добавление категории",
-               "object": manager_dict,
-               "argument": "add_cat"},
-               "2": {
-                    "title": "Редактирование категории",
-                    "object": manager_dict,
-                    "argument": "edit_cat",},
-                    "3": {
-                         "title": "Удаление категории",
-                         "object": manager_dict,
-                         "argument": "delete_cat"},
-                         "0": {
-                              "title": "Назад"}
-     }}
 
 DICTIONARY_MENU = {
     "name": "УПРАВЛЕНИЕ СЛОВАРЕМ",
@@ -85,10 +67,15 @@ STATS_MENU = {
          "title": "Трудные слова",
          "object": manager_stats,
          "argument": "difficult"},
-    "4": {
+         "4": {
+              "title": "Сводная таблица прогресса изучения слов",
+              "object": manager_stats,
+              "argument": "summary"
+         },
+    "5": {
          "title": "Обнулить статистику",
          "object": manager_stats,
-         "argument": "rewrite"},
+         "argument": "reset"},
     "0": {
          "title": "Назад"}
 }}
@@ -115,6 +102,18 @@ MAIN_MENU = {
 
 #функция вывода меню на экран
 def show_menu(menu: dict) -> str:
+    """Отображает меню и запрашивает у пользователя выбор пункта меню.
+    
+    Очищает экран, выводит название меню и список доступных пунктов.
+    Затем запрашивает у пользователя пункт меню, пока не будет введен корректный вариант
+    
+    Args:
+        menu: Словарь с данными меню, должен содержать название меню
+        и словарь с пунктами меню.
+        
+    Returns:
+        Ключ выбранного пользователем пункта меню в виде строки.
+        """
     clear_screen()
     print(menu[NAME])
     items= menu[ITEMS]
@@ -122,12 +121,24 @@ def show_menu(menu: dict) -> str:
         print(f"{key}. {item[TITLE]}")
     while True:
         choice = input("Выберите пункт меню")
-        if choice in [key for key in items.keys()]:
+        if choice in items:
             return choice
         print("Выбран некорректный вариант.")
 
 #раскрывает вложенное меню или запускает функцию
 def process_menu(menu: dict) -> None:
+    """Обрабатывает выбранные пользователем пункты меню.
+    
+    Если выбран пункт вложенного меню, рекурсивно
+    обрабатывает это меню.  Если выбран 
+    вызываемый объект, вызывает объект с аргументом,
+    если аргумент указан в данных пункта меню.
+    
+    Args:
+        menu: Словарь с данными меню. Каждый пункт должен содержать
+объект для обработки: вложенное меню или вызываемую функцию. 
+Для вызываемой функции может быть указан аргумент.
+    """
     while True:
         choice =     show_menu(menu)
         if choice == "0":
@@ -146,4 +157,4 @@ def process_menu(menu: dict) -> None:
     
 def menu() -> None:
     process_menu(MAIN_MENU)
-    return
+    
