@@ -116,7 +116,7 @@ def show_session_results(start_stats: dict, session_list: list) -> None:
     count_words = len(session_list)
 
     total_session_stats = [("Всего показано слов:", str(count_words)), ("Всего ответов:", str(total_shows)), ("Всего правильных ответов:", str(total_correct)), ("Всего неправильных ответов:", str(total_incorrect)), ("Общая точность ответов:", str(accuracy) + "%")]
-    show_table(title="Общая статистика прогресса обучения за сессию", data=total_session_stats)
+    show_table(title="Общая статистика результатов сессии", data=total_session_stats)
 
     for word in session_list:
         shows = stats[word][SHOWS] - start_stats[word][SHOWS]
@@ -131,7 +131,7 @@ def show_session_results(start_stats: dict, session_list: list) -> None:
         line = ([word, vocabulary[word][TRANSLATION]], str(shows), str(correct) + "/" + str(incorrect), str(streak), str(interval), next_show.strftime("%d.%m.%y"), old_status, new_status)
         session_words_stats.append(line)
 
-    show_table("Прогресс по результатам сессии", session_words_stats, headers)
+    show_table("Прогресс изучения по словам", session_words_stats, headers)
 
 
 def show_word_stats() -> None:
