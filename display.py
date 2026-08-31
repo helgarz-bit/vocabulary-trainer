@@ -2,28 +2,26 @@ import shutil
 
 from storage import vocabulary, stats
 from config import *
-
-SCREEN_WIDTH= shutil.get_terminal_size().columns
-
-def split_into_lines(text: str, width: int)-> list:
-    lines = []
-    current_line = []     
-    words = text.split()
-    for word in words:
-        current_line.append(word) 
-        if len(" ".join(current_line)) > width:
-             current_line.pop()
-             lines.append(" ".join(current_line))
-             current_line.clear()
-             current_line.append(word)
-
-    if current_line:
-         lines.append(" ".join(current_line))
-    return lines
-
+from utils import pause
 
 #подготовка данных к печати
 def prepare_data_to_print(data: list|dict, word: str|None =None) -> list:
+    """Подготавливает данные к выводу в табличном формате.
+    Функция преобразует словарь или список данных в единый формат,
+    используемый функциями вывода таблиц.
+    Если data является словарем vocabulary или stats и 
+    указан параметр word, формируется список данных для одного слова.
+    Если word не указан, формируется список для всех записей словаря.
+    Если data является списком, то каждый элемент преобразуется в структуру, в которой отдельные значения представлены списками.
+    
+    Args:
+        data: Словарь или список данных, предназначенные для вывода.
+        word: Слово, для которого необходимо подготовить данные.
+        Если значение не указано, подготавливаются данные для всех записей словаря.
+        
+    Returns:
+        Список подготовленных данных, пригодных для формирования и вывода таблицы.
+    """
     output_data = []
     if isinstance(data, dict):
         if data == vocabulary:
@@ -31,11 +29,12 @@ def prepare_data_to_print(data: list|dict, word: str|None =None) -> list:
         elif data == stats:
             field_voc = stats_fields
         if word is not None:
+            characteristic =  data[word]
             for field_name, field_data in field_voc.items():
                 if field_name == WORD:
                     output_data.append(([field_data[PROMPT]], [word]))
                     continue
-                characteristic =  data[word]
+                
                 if data == vocabulary:
                     output_data.append(([field_data[PROMPT]], [characteristic[field_name]]))
                 else:
@@ -65,7 +64,7 @@ def prepare_data_to_print(data: list|dict, word: str|None =None) -> list:
     return output_data
 
 #расчет ширины столбцов таблицы
-def calculat_width_column( rows: list, headers: list|None) -> list:
+def calculate_width_column( rows: list, headers: list|None) -> tuple:
     width_column = []
     column_count = len(rows[0])
     spaces = 2
@@ -83,14 +82,26 @@ def calculat_width_column( rows: list, headers: list|None) -> list:
 
     width_table = sum(width_column) + separators
     
-    width_column.append(width_table)
-    
-    return width_column
+    return (width_column, width_table)
 
 #вывод таблицы на экран
-def display_table(rows: list, width_column: list, headers: list|None) -> None:
+def display_table(rows: list, width_params: tuple, headers: list|None) -> None:
+    """Выводит данные в виде таблицы в консоль.
+    
+    Поддерживает многострочные значения в ячейках. Если значение 
+    ячейки занимает меньше максимального числа строк, недостающие строки заполняются пробелами.
+    При наличии перед данными выводятся заголовки столбцов.
+    
+    Args:
+        rows: Строки таблицы. Каждая строка содержит 
+        список ячеек, а содержимое каждой ячейки представлено списком строк.
+        width_params: Кортеж из двух элементов: списка ширины столбцов
+        и общей ширины таблицы.
+        headers: Заголовки столбцов, представленные в том же формате,что и данные.
+        Если значение None, то заголовки не выводятся.
+    """
     column_count = len(rows[0])
-    width_table = width_column.pop()
+    width_column,  width_table = width_params
     
     print("_" * width_table)
 
@@ -129,26 +140,42 @@ def display_table(rows: list, width_column: list, headers: list|None) -> None:
 
 #вывод таблицы на экран
 def show_table(title: str, data: list|tuple, headers: list|None =None) -> None:
+    """Подготавливает данные и выводит в виде таблицы.
+    
+    Проверяет наличие данных, подготавливает их для вывода,
+    расчитывает ширину столбцов и выводит таблицу с указанным заголовком.
+    
+    Если data является кортежем, он должен содержатьсловарь и слово.
+    В этом случае выводятся данные только для указанного слова.
+    Если data является списком, то выводятся все содержащиеся в нем данные.
+    
+    Args:
+        title: Заголовок таблицы.
+        data: Данные для вывода. Может содержать список данных или
+        кортеж из словаря и слова для вывода данных конкретного слова.
+        headers: Заголовки столбцов. Если значение None, то 
+        заголовки не выводятся.
+    """
     if isinstance(data, tuple):
         dictionary, word = data
-        if vocabulary:
+        if dictionary:
             rows = prepare_data_to_print(dictionary, word)
         else:
             print("Словарь пуст. Вывод данных невозможен.")
+            pause()
             return
     else:
         if data:
                 rows = prepare_data_to_print(data)
         else:
             print("Данные отсутствуют. Вывод данных невозможен.")
+            pause()
             return
     
-    
-    width_columns = calculat_width_column(rows, headers)
-    width_table = width_columns[-1]
-    
+    width_params = calculate_width_column(rows, headers)
+    width_columns, width_table = width_params
     print(title.upper().center(width_table))
-    display_table(rows, width_columns, headers)
+    display_table(rows, width_params, headers)
     
 
 #про    верка работы модуля
