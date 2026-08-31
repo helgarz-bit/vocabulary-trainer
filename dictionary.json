@@ -1,0 +1,67 @@
+{
+    "apple": {
+        "translation": "яблоко",
+        "example": "I eat an apple every morning",
+        "category": "fruits"
+    },
+    "carrot": {
+        "translation": "морковь",
+        "example": "The rabbit ignored the carrot and ran straight toward the lettuce.",
+        "category": "vegetables"
+    },
+    "elephant": {
+        "translation": "слон",
+        "example": "The elephant used its trunk to pick up a tiny piece of fruit.",
+        "category": "animals"
+    },
+    "peach": {
+        "translation": "персик",
+        "example": "The peach was so juicy that its juice ran down my hand.",
+        "category": "fruits"
+    },
+    "bear": {
+        "translation": "медведь",
+        "example": "The bear lives in the forest",
+        "category": "animals"
+    },
+    "river": {
+        "translation": "река",
+        "example": "Volga is the longest river in the Russia.",
+        "category": "geographic"
+    },
+    "forest": {
+        "translation": "лес",
+        "example": "We got lost in the forest because we followed the wrong path.",
+        "category": "geographic"
+    },
+    "pear": {
+        "translation": "груша",
+        "example": "I like jucy sweet pears",
+        "category": "fruits"
+    },
+    "wolf": {
+        "translation": "волк",
+        "example": "The wolf watched us from a distance and then disappeared into the woods.",
+        "category": "animals"
+    },
+    "book": {
+        "translation": "книга",
+        "example": "I started reading the book on the train and missed my stop.",
+        "category": "uncategorized"
+    },
+    "pond": {
+        "translation": "пруд",
+        "example": "A family of ducks was swimming across the pond when we arrived.",
+        "category": "geographic"
+    },
+    "sun": {
+        "translation": "солнце",
+        "example": "The sun came out just as we were about to cancel the picnic.",
+        "category": "uncategorized"
+    },
+    "fox": {
+        "translation": "лиса",
+        "example": "",
+        "category": "animals"
+    }
+}

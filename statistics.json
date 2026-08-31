@@ -1,0 +1,119 @@
+{
+    "fox": {
+        "shows": 0,
+        "correct": 0,
+        "status": "new",
+        "streak": 0,
+        "interval": 0,
+        "next_show": null,
+        "last_wrong": 0
+    },
+    "bear": {
+        "shows": 5,
+        "correct": 3,
+        "status": "learning",
+        "streak": 2,
+        "interval": 3,
+        "next_show": "2026-09-02",
+        "last_wrong": 0
+    },
+    "wolf": {
+        "shows": 8,
+        "correct": 7,
+        "status": "consolidating",
+        "streak": 3,
+        "interval": 7,
+        "next_show": "2026-08-30",
+        "last_wrong": 0
+    },
+    "elephant": {
+        "shows": 10,
+        "correct": 6,
+        "status": "consolidating",
+        "streak": 3,
+        "interval": 14,
+        "next_show": "2026-09-03",
+        "last_wrong": 1
+    },
+    "apple": {
+        "shows": 9,
+        "correct": 7,
+        "status": "consolidating",
+        "streak": 5,
+        "interval": 14,
+        "next_show": "2026-09-05",
+        "last_wrong": 0
+    },
+    "pear": {
+        "shows": 15,
+        "correct": 5,
+        "status": "consolidating",
+        "streak": 0,
+        "interval": 7,
+        "next_show": "2026-08-31",
+        "last_wrong": 1
+    },
+    "peach": {
+        "shows": 10,
+        "correct": 4,
+        "status": "consolidating",
+        "streak": 0,
+        "interval": 7,
+        "next_show": "2026-08-31",
+        "last_wrong": 2
+    },
+    "book": {
+        "shows": 12,
+        "correct": 11,
+        "status": "consolidating",
+        "streak": 10,
+        "interval": 14,
+        "next_show": "2026-09-04",
+        "last_wrong": 0
+    },
+    "carrot": {
+        "shows": 20,
+        "correct": 15,
+        "status": "reviewing",
+        "streak": 6,
+        "interval": 30,
+        "next_show": "2026-09-01",
+        "last_wrong": 1
+    },
+    "forest": {
+        "shows": 18,
+        "correct": 15,
+        "status": "reviewing",
+        "streak": 8,
+        "interval": 30,
+        "next_show": "2026-09-21",
+        "last_wrong": 0
+    },
+    "river": {
+        "shows": 17,
+        "correct": 15,
+        "status": "reviewing",
+        "streak": 10,
+        "interval": 30,
+        "next_show": "2026-09-15",
+        "last_wrong": 0
+    },
+    "pond": {
+        "shows": 12,
+        "correct": 5,
+        "status": "consolidating",
+        "streak": 3,
+        "interval": 5,
+        "next_show": "2026-09-02",
+        "last_wrong": 1
+    },
+    "sun": {
+        "shows": 5,
+        "correct": 3,
+        "status": "learning",
+        "streak": 2,
+        "interval": 3,
+        "next_show": "2026-09-01",
+        "last_wrong": 0
+    }
+}
